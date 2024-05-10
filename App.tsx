@@ -5,10 +5,8 @@ import {
   StyleSheet,
   Button,
   Animated,
-  findNodeHandle,
   Dimensions,
   RefreshControl,
-  Image,
   ScrollView,
 } from 'react-native';
 
@@ -59,7 +57,7 @@ const styles = StyleSheet.create({
     marginVertical: 20,
   },
   backgroundImageBody: {
-    height: 200, // 仅示例，根据需要调整
+    height: 200,
   },
   backgroundImage: {
     height: 200,
@@ -71,13 +69,12 @@ const FlatListDemo = React.forwardRef((props, flatListRef) => {
   const [isRefresh, setIsRefresh] = useState(false);
   const [refreshStatus, setRefreshStatus] = useState(0);
   const [flatListData, setFlatListData] = useState([]);
-  const opacityValue = useRef(new Animated.Value(0)).current; // 透明度从0变化到1
-  const scaleValue = useRef(new Animated.Value(0)).current; // 缩放从0变化到1
+  const opacityValue = useRef(new Animated.Value(0)).current;
+  const scaleValue = useRef(new Animated.Value(0)).current;
 
-  // 模拟FlatList数据
   useEffect(() => {
     const data = Array.from({length: 100}, (_, index) => ({
-      a: index % 2, // 用于切换渲染的视图
+      a: index % 2,
       id: index,
     })).map((item, index) =>
       item.a === 1
@@ -106,22 +103,19 @@ const FlatListDemo = React.forwardRef((props, flatListRef) => {
     ]).start();
   }, [opacityValue, scaleValue]);
 
-  // 模拟刷新动作
   const refreshOrder = () => {
     setIsRefresh(true);
     setTimeout(() => {
       setIsRefresh(false);
-      setRefreshStatus(status => (status + 1) % 2); // 简单切换刷新状态文本
+      setRefreshStatus(status => (status + 1) % 2);
     }, 2000);
   };
 
-  // 模拟隐藏引导动作
   const hideGuide = () => {
     console.log('animated:', animatedValue);
     console.log('Hide guide');
   };
 
-  // 模拟FlatListBody组件
   const FlatListBody = () => (
     <View
       style={{
@@ -131,7 +125,6 @@ const FlatListDemo = React.forwardRef((props, flatListRef) => {
     </View>
   );
 
-  // 模拟刷新状态文本
   const REFRESHSTATUS = ['Pull to refresh', 'Loading...'];
 
   const backgroundColor = animatedValue.interpolate({
@@ -214,7 +207,9 @@ const FlatListDemo = React.forwardRef((props, flatListRef) => {
       onScroll={Animated.event(
         [{nativeEvent: {contentOffset: {y: animatedValue}}}],
         {
-          useNativeDriver: true,
+          // Change if needed useNativeDriver to true
+          // useNativeDriver: true leads to animated working not great
+          useNativeDriver: false,
           listener: event => {
             hideGuide();
           },
