@@ -1,118 +1,147 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
-
-import React from 'react';
-import type {PropsWithChildren} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  useColorScheme,
   View,
+  Text,
+  StyleSheet,
+  Button,
+  Animated,
+  Dimensions,
+  RefreshControl,
+  ScrollView,
 } from 'react-native';
 
-import {
-  Colors,
-  DebugInstructions,
-  Header,
-  LearnMoreLinks,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
-
-type SectionProps = PropsWithChildren<{
-  title: string;
-}>;
-
-function Section({children, title}: SectionProps): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
-  return (
-    <View style={styles.sectionContainer}>
-      <Text
-        style={[
-          styles.sectionTitle,
-          {
-            color: isDarkMode ? Colors.white : Colors.black,
-          },
-        ]}>
-        {title}
-      </Text>
-      <Text
-        style={[
-          styles.sectionDescription,
-          {
-            color: isDarkMode ? Colors.light : Colors.dark,
-          },
-        ]}>
-        {children}
-      </Text>
-    </View>
-  );
-}
-
-function App(): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
-
-  const backgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
-  };
-
-  return (
-    <SafeAreaView style={backgroundStyle}>
-      <StatusBar
-        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-        backgroundColor={backgroundStyle.backgroundColor}
-      />
-      <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        style={backgroundStyle}>
-        <Header />
-        <View
-          style={{
-            backgroundColor: isDarkMode ? Colors.black : Colors.white,
-          }}>
-          <Section title="Step One">
-            Edit <Text style={styles.highlight}>App.tsx</Text> to change this
-            screen and then come back to see your edits.
-          </Section>
-          <Section title="See Your Changes">
-            <ReloadInstructions />
-          </Section>
-          <Section title="Debug">
-            <DebugInstructions />
-          </Section>
-          <Section title="Learn More">
-            Read the docs to discover what to do next:
-          </Section>
-          <LearnMoreLinks />
-        </View>
-      </ScrollView>
-    </SafeAreaView>
-  );
-}
-
 const styles = StyleSheet.create({
-  sectionContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
+  container: {
+    flex: 1,
+    width: Dimensions.get('window').width,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: '600',
+  scrollView: {
+    flex: 1,
+    width: Dimensions.get('window').width,
   },
-  sectionDescription: {
-    marginTop: 8,
-    fontSize: 18,
-    fontWeight: '400',
+  targetView: {
+    height: 100,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'lightblue',
+    marginVertical: 20,
   },
-  highlight: {
-    fontWeight: '700',
+  backgroundImageBody: {
+    height: 200,
+  },
+  backgroundImage: {
+    height: 200,
   },
 });
 
-export default App;
+const FlatListDemo = () => {
+  const animatedValue = new Animated.Value(0);
+  const [isRefresh, setIsRefresh] = useState(false);
+  const [refreshStatus, setRefreshStatus] = useState(0);
+  const [flatListData, setFlatListData] = useState([]);
+  const flatListRef = useRef(null);
+
+  useEffect(() => {
+    const data = Array.from({length: 100}, (_, index) => ({
+      a: index % 2,
+      id: index,
+    })).map((item, index) =>
+      item.a === 1
+        ? {
+            ...item,
+            title: `Title ${index}`,
+            content: `Content ${index}`,
+          }
+        : item,
+    );
+    setFlatListData(data);
+  }, []);
+
+  const refreshOrder = () => {
+    setIsRefresh(true);
+    setTimeout(() => {
+      setIsRefresh(false);
+      setRefreshStatus(status => (status + 1) % 2); // 简单切换刷新状态文本
+    }, 2000);
+  };
+
+  const hideGuide = () => {
+    console.log('animated:', animatedValue);
+    console.log('Hide guide');
+  };
+
+  const REFRESHSTATUS = ['Pull to refresh', 'Loading...'];
+
+  const backgroundColor = animatedValue.interpolate({
+    inputRange: [0, 3000],
+    outputRange: ['rgb(0, 255, 0)', 'rgb(255, 0, 0)'],
+  });
+
+  return (
+    <View>
+      <Animated.View
+        style={{
+          position: 'relative',
+          backgroundColor: 'pink',
+          width: 100,
+          height: 100,
+          transform: [
+            {
+              translateX: animatedValue.interpolate({
+                inputRange: [0, 15000],
+                outputRange: [0, 100],
+              }),
+            },
+          ],
+        }}>
+        <Text>Translate y</Text>
+      </Animated.View>
+      <Animated.FlatList
+        style={{
+          height: Dimensions.get('screen').height,
+        }}
+        nestedScrollEnabled={true}
+        ref={flatListRef}
+        keyboardDismissMode="on-drag"
+        keyboardShouldPersistTaps="handled"
+        scrollEventThrottle={20}
+        data={flatListData}
+        renderItem={({item}) => {
+          return (
+            <Animated.View
+              style={{
+                width: Dimensions.get('screen').width,
+                marginTop: 20,
+                height: 300,
+                backgroundColor: backgroundColor,
+              }}></Animated.View>
+          );
+        }}
+        keyExtractor={item => String(item.id)}
+        onScroll={Animated.event(
+          [{nativeEvent: {contentOffset: {y: animatedValue}}}],
+          {
+            useNativeDriver: true,
+            listener: event => {
+              hideGuide();
+            },
+          },
+        )}
+        refreshControl={
+          <RefreshControl
+            style={{backgroundColor: 'transparent'}}
+            refreshing={isRefresh}
+            onRefresh={refreshOrder}
+            title={REFRESHSTATUS[refreshStatus]}
+            tintColor="#FFF"
+            titleColor="#FFF"
+          />
+        }
+      />
+    </View>
+  );
+};
+
+export default FlatListDemo;
